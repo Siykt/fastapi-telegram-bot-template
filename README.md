@@ -366,7 +366,7 @@ export REDIS_URL=redis://host:6379/0
 
 ## 📄 许可证
 
-[添加许可证信息]
+[MIT](LICENSE)
 
 ## 🤝 贡献
 
@@ -374,5 +374,6 @@ export REDIS_URL=redis://host:6379/0
 
 ## 📞 联系方式
 
-[添加联系方式]
+[Siykt](https://github.com/Siykt)
 
+[Gavin](https://github.com/konbluesky)
