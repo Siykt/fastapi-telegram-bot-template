@@ -12,11 +12,20 @@ from pydantic import BaseModel, Field, RootModel
 class DatabaseSettings(BaseModel):
     """数据库配置。"""
 
-    url: str = Field(default="mysql+asyncmy://user:pass@localhost:3306/database_name", description="数据库连接URL, 必填")
+    url: str = Field(default="mysql+asyncmy://user:pass@localhost:3306/hitcards", description="数据库连接URL, 必填")
+    username: str = Field(default="user", description="数据库用户名, 必填")
+    password: str = Field(default="pass", description="数据库密码, 必填")
     pool_size: int = Field(default=10, ge=1, description="连接池大小, 可选, 默认10")
     max_overflow: int = Field(default=20, ge=0, description="连接池最大溢出数, 可选, 默认20")
     pool_timeout: float = Field(default=30, ge=0, description="连接池超时时间, 可选, 默认30秒")
     echo: bool = Field(default=False, description="是否打印SQL语句, 可选, 默认False")
+
+    def get_db_url(self) -> str:
+        """获取数据库连接URL。"""
+        # 对用户名和密码进行 URL 编码，处理特殊字符（如 #, $, %, ^ 等）
+        encoded_user = quote_plus(self.username)
+        encoded_password = quote_plus(self.password)
+        return self.url + f"?user={encoded_user}&password={encoded_password}"
 
 
 class RedisSettings(BaseModel):
@@ -125,6 +134,30 @@ def get_settings() -> Settings:
     env = os.getenv("APP_ENV", "dev")
     config_data = _load_yaml_config(env)
     return Settings(**config_data)
+
+
+def reload_settings(env: str | None = None) -> Settings:
+    """Reload settings with a new environment.
+
+    Args:
+        env: Environment name (dev/test/prod). If None, uses APP_ENV env var.
+
+    Returns:
+        New Settings instance
+    """
+    if env is not None:
+        os.environ["APP_ENV"] = env
+    get_settings.cache_clear()
+    new_settings = get_settings()
+    # Update the module-level settings reference
+    global settings
+    settings = new_settings
+    return new_settings
+
+
+def get_current_env() -> str:
+    """Get current environment name."""
+    return os.getenv("APP_ENV", "dev")
 
 
 settings = get_settings()
