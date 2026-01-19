@@ -35,8 +35,7 @@ class SnowflakeGenerator:
         epoch: int, 起始时间戳(毫秒), 默认2024-01-01 00:00:00 UTC
         """
         if machine_id < 0 or machine_id > self.MAX_MACHINE_ID:
-            raise ValueError(
-                f"machine_id must be between 0 and {self.MAX_MACHINE_ID}")
+            raise ValueError(f"machine_id must be between 0 and {self.MAX_MACHINE_ID}")
 
         self.machine_id = machine_id
         self.epoch = epoch
@@ -59,8 +58,7 @@ class SnowflakeGenerator:
             timestamp = self._current_millis()
 
             if timestamp < self.last_timestamp:
-                raise RuntimeError(
-                    f"Clock moved backwards. Refusing to generate id for {self.last_timestamp - timestamp} milliseconds")
+                raise RuntimeError(f"Clock moved backwards. Refusing to generate id for {self.last_timestamp - timestamp} milliseconds")
 
             if timestamp == self.last_timestamp:
                 self.sequence = (self.sequence + 1) & self.MAX_SEQUENCE
@@ -78,15 +76,23 @@ class SnowflakeGenerator:
 _snowflake: SnowflakeGenerator | None = None
 
 
-def init_snowflake(machine_id: int = 1) -> None:
-    """Initialize global snowflake generator."""
+def init_snowflake(machine_id: int | None = None) -> None:
+    """Initialize global snowflake generator.
+
+    Args:
+        machine_id: 机器ID (0-15)。若为 None，则使用进程 PID % 16 自动分配，
+                    确保多 worker 环境下不冲突
+    """
     global _snowflake
+    if machine_id is None:
+        import os
+        machine_id = os.getpid() % 16
+        print(f"[Snowflake] Auto-assigned machine_id={machine_id} for PID={os.getpid()}")
     _snowflake = SnowflakeGenerator(machine_id=machine_id)
 
 
 def generate_id() -> int:
     """Generate a unique snowflake ID (53-bit, JS safe)."""
     if _snowflake is None:
-        raise RuntimeError(
-            "Snowflake not initialized. Call init_snowflake() first.")
+        raise RuntimeError("Snowflake not initialized. Call init_snowflake() first.")
     return _snowflake.generate()

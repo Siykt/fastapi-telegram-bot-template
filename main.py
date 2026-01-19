@@ -6,21 +6,27 @@ from fastapi import FastAPI
 
 from app.core import close_database, close_redis, init_database, init_logger, init_redis, settings
 from app.bot import bot_manager, init_bot_manager
-
+from app.scheduler import init_scheduler, scheduler_manager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
     init_logger()
-    init_database()
+    await init_database()
     await init_redis()
 
     # 初始化并启动Bot
     init_bot_manager()
     await bot_manager.start()
 
+    # 初始化并启动调度器
+    init_scheduler()
+    await scheduler_manager.start()
+
     yield
 
+    # 停止调度器
+    await scheduler_manager.stop()
     # 停止Bot并清理资源
     await bot_manager.stop()
     await close_redis()
