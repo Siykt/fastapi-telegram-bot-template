@@ -32,7 +32,7 @@ class RedisSettings(BaseModel):
     """Redis配置。"""
 
     url: str = Field(default="redis://localhost:6379/0", description="Redis连接URL, 必填")
-
+    password: str | None = Field(default=None, description="Redis密码, 可选")
 
 class BotConfig(BaseModel):
     """单个Bot配置。"""
